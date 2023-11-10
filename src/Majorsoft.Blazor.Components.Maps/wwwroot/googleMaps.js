@@ -1,9 +1,9 @@
-﻿export function init(key, elementId, dotnetRef, backgroundColor, controlSize) {
+﻿export function init(key, elementId, dotnetRef, backgroundColor, controlSize, restriction) {
 	if (!key || !elementId || !dotnetRef) {
 		return;
 	}
 
-	storeElementIdWithDotnetRef(_mapsElementDict, elementId, dotnetRef, backgroundColor, controlSize); //Store map info
+	storeElementIdWithDotnetRef(_mapsElementDict, elementId, dotnetRef, backgroundColor, controlSize, restriction); //Store map info
 
 	let src = "https://maps.googleapis.com/maps/api/js?key=";
 	let scriptsIncluded = false;
@@ -50,9 +50,25 @@ window.initGoogleMaps = () => {
 		}
 
 		//Create Map
+		let restrict = null;
+		if (mapInfo.restriction && mapInfo.restriction.latLngBounds
+			&& mapInfo.restriction.latLngBounds.northEast && mapInfo.restriction.latLngBounds.southWest) {
+			restrict =
+			{
+				latLngBounds: {
+					south: mapInfo.restriction.latLngBounds.southWest.lat,
+					west: mapInfo.restriction.latLngBounds.southWest.lng,
+					north: mapInfo.restriction.latLngBounds.northEast.lat,
+					east: mapInfo.restriction.latLngBounds.northEast.lng
+				},
+				strictBounds: mapInfo.restriction.strictBounds,
+			};
+		}
+
 		let map = new google.maps.Map(document.getElementById(elementId), {
 			backgroundColor: mapInfo.bgColor,
 			controlSize: mapInfo.ctrSize,
+			restriction: restrict,
 		});
 		map.elementId = elementId;
 		_mapsElementDict[i].value.map = map;
@@ -265,7 +281,7 @@ window.initGoogleMaps = () => {
 };
 
 //Store elementId with .NET Ref
-function storeElementIdWithDotnetRef(dict, elementId, dotnetRef, backgroundColor, controlSize) {
+function storeElementIdWithDotnetRef(dict, elementId, dotnetRef, backgroundColor, controlSize, restriction) {
 	let elementFound = false;
 	for (let i = 0; i < dict.length; i++) {
 		if (dict[i].key === elementId) {
@@ -276,7 +292,7 @@ function storeElementIdWithDotnetRef(dict, elementId, dotnetRef, backgroundColor
 	if (!elementFound) {
 		dict.push({
 			key: elementId,
-			value: { ref: dotnetRef, map: null, bgColor: backgroundColor, ctrSize: controlSize }
+			value: { ref: dotnetRef, map: null, bgColor: backgroundColor, ctrSize: controlSize, restriction: restriction }
 		});
 	}
 }
@@ -342,6 +358,49 @@ export function panToAddress(elementId, address) {
 		}
 	}
 }
+//get methods
+export function getBounds(elementId) {
+	if (elementId) {
+		let mapWithDotnetRef = getElementIdWithDotnetRef(_mapsElementDict, elementId);
+		if (mapWithDotnetRef && mapWithDotnetRef.map) {
+			let bounds = mapWithDotnetRef.map.getBounds();
+
+			let ret = {
+				Center: convertToLatLng(bounds.getCenter()),
+				NorthEast: convertToLatLng(bounds.getNorthEast()),
+				SouthWest: convertToLatLng(bounds.getSouthWest()),
+				Span: convertToLatLng(bounds.toSpan()),
+				IsEmpty: bounds.isEmpty(),
+			};
+			return ret;
+		}
+	}
+}
+export function getCenter(elementId) {
+	if (elementId) {
+		let mapWithDotnetRef = getElementIdWithDotnetRef(_mapsElementDict, elementId);
+		if (mapWithDotnetRef && mapWithDotnetRef.map) {
+			let center = mapWithDotnetRef.map.getCenter();
+
+			let ret = convertToLatLng(center);
+			return ret;
+		}
+	}
+}
+export function getDiv(elementId) {
+	if (elementId) {
+		let mapWithDotnetRef = getElementIdWithDotnetRef(_mapsElementDict, elementId);
+		if (mapWithDotnetRef && mapWithDotnetRef.map) {
+			var ret = mapWithDotnetRef.map.getDiv();
+			return ret;
+		}
+	}
+}
+function convertToLatLng(latLngObject) {
+	let ret = { lat: latLngObject.lat(), lng: latLngObject.lng() };
+	return ret;
+}
+
 //set methods
 export function setZoom(elementId, zoom) {
 	if (elementId) {
@@ -552,6 +611,22 @@ function setMarkerData(markerData, marker) {
 	marker.setTitle(markerData.title);
 	marker.setVisible(markerData.visible);
 	marker.setZIndex(markerData.zIndex);
+}
+
+//Drawing
+export function polylineSetMap(elementId, polylineOptions) {
+	if (elementId && polylineOptions && polylineOptions.length) {
+		let mapWithDotnetRef = getElementIdWithDotnetRef(_mapsElementDict, elementId);
+		if (mapWithDotnetRef && mapWithDotnetRef.map) {
+
+			for (var i = 0; i < polylineOptions.length; i++) {
+				let options = polylineOptions[i];
+
+				let polyline = new google.maps.Polyline(options);
+				polyline.setMap(mapWithDotnetRef.map);
+			}
+		}
+	}
 }
 
 //Google GeoCoder

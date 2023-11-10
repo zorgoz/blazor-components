@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-using Majorsoft.Blazor.Components.Common.JsInterop.Click;
 using Majorsoft.Blazor.Components.Common.JsInterop.ElementInfo;
 using Majorsoft.Blazor.Components.Common.JsInterop.Scroll;
 using Majorsoft.Blazor.Components.Core.HtmlColors;
@@ -181,6 +180,7 @@ namespace Majorsoft.Blazor.Components.Typeahead
 		[Parameter] public EventCallback<TItem> OnSelectedItemChanged { get; set; }
 		[Parameter] public EventCallback OnDropdownOpen { get; set; }
 		[Parameter] public EventCallback OnDropdownClose { get; set; }
+		[Parameter] public EventCallback<FocusEventArgs> OnFocus { get; set; }
 
 		[Parameter(CaptureUnmatchedValues = true)]
 		public Dictionary<string, object> AdditionalAttributes { get; set; }
@@ -307,14 +307,20 @@ namespace Majorsoft.Blazor.Components.Typeahead
 				}
 			}
 		}
-		private async Task OnFocus(FocusEventArgs e)
+		private async Task OnFocused(FocusEventArgs e)
 		{
-			WriteDiag($"{nameof(OnFocus)} event: '{e.Type}'.");
+			WriteDiag($"{nameof(OnFocused)} event: '{e.Type}'.");
 			_hasNoResult = false;
 
 			await _clickHandler.RegisterClickBoundariesAsync(_typeahead.InnerElementReference, OnOutsideClick, OnInsideClick);
 
 			await Activate();
+
+			if (OnFocus.HasDelegate)
+			{
+				WriteDiag($"{nameof(OnFocus)} delegate: '{e.Type}'.");
+				await OnFocus.InvokeAsync(e);
+			}
 		}
 		private async Task OnOutsideClick(MouseEventArgs e)
 		{
@@ -376,7 +382,7 @@ namespace Majorsoft.Blazor.Components.Typeahead
 		}
 		private async Task SelectItem(TItem item)
 		{
-			SelectedItem = item;
+			_selectedItem = item;
 			Value = GetItemText(item);
 			IsOpen = false;
 			try

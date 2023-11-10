@@ -1,4 +1,5 @@
-﻿using Microsoft.JSInterop;
+﻿
+using Microsoft.JSInterop;
 
 using System;
 using System.Collections.Generic;
@@ -51,7 +52,8 @@ namespace Majorsoft.Blazor.Components.Maps.Google
 			Func<GeolocationCoordinate, Task>? mapDragStartCallback = null,
 			Func<Rect, Task>? mapResizedCallback = null,
 			Func<Task>? mapTilesLoadedCallback = null,
-			Func<Task>? mapIdleCallback = null)
+			Func<Task>? mapIdleCallback = null,
+			GoogleMapRestriction restriction = null)
 		{
 			if(MapContainerId == mapContainerId)
 			{
@@ -89,7 +91,7 @@ namespace Majorsoft.Blazor.Components.Maps.Google
 
 			_dotNetObjectReference = DotNetObjectReference.Create<GoogleMapEventInfo>(info);
 
-			await _mapsJs.InvokeVoidAsync("init", apiKey, mapContainerId, _dotNetObjectReference, backgroundColor, controlSize);
+			await _mapsJs.InvokeVoidAsync("init", apiKey, mapContainerId, _dotNetObjectReference, backgroundColor, controlSize, restriction);
 		}
 
 		public async Task SetCenterAsync(double latitude, double longitude)
@@ -235,6 +237,31 @@ namespace Majorsoft.Blazor.Components.Maps.Google
 				//}
 			}
 		}
+
+		public async ValueTask<GoogleMapLatLngBounds> GetBoundsAsync()
+		{
+			await CheckJsObjectAsync();
+			return await _mapsJs.InvokeAsync<GoogleMapLatLngBounds>("getBounds", MapContainerId);
+		}
+
+		public async ValueTask<GoogleMapLatLng> GetCenterAsync()
+		{
+			await CheckJsObjectAsync();
+			return await _mapsJs.InvokeAsync<GoogleMapLatLng>("getCenter", MapContainerId);
+		}
+
+		public async ValueTask<IJSObjectReference> GetDivAsync()
+		{
+			await CheckJsObjectAsync();
+			return await _mapsJs.InvokeAsync<IJSObjectReference>("getDiv", MapContainerId);
+		}
+
+		public async Task AddPolyline(params GoogleMapPolylineOptions[] googleMapPolylineOptions)
+		{
+			await CheckJsObjectAsync();
+			await _mapsJs.InvokeVoidAsync("polylineSetMap", MapContainerId, googleMapPolylineOptions);
+		}
+
 
 		private async Task CheckJsObjectAsync()
 		{
