@@ -28,7 +28,7 @@ Injecting and protecting this _Token_ or _API Key_ in your Blazor application is
 - **`IGoogleMapService`**: Injectable service to handle Google JavaScript Maps functionalities. Available on the instance of `GoogleMap` object ref as well.
 
 #### Bing:
-- **`BindMap`**: _Planned in release v1.6.0_
+- **`BindMap`**: _Planned_
 
 Maps using `IGeolocationService` (see "Dependences") to center current position.
 It can be omitted and injected separately to your components as well to get or track device location. 
@@ -297,6 +297,29 @@ Add using statement to your Blazor `<component/page>.razor` file. Or globally re
 @*Other Maps dependencies*@
 @using Majorsoft.Blazor.Components.Common.JsInterop.Geo
 @using Majorsoft.Blazor.Components.Core.Extensions
+```
+
+**In case of WebAssembly project register CSS events services in your `Program.cs` file:**
+```
+using Majorsoft.Blazor.Components.CssEvents;
+...
+public static async Task Main(string[] args)
+{
+	var builder = WebAssemblyHostBuilder.CreateDefault(args);
+
+	builder.Services.AddMapExtensions();
+}
+```
+
+**In case of Server hosted project register CSS events services in your `Startup.cs` file:**
+```
+using Majorsoft.Blazor.Components.CssEvents;
+...
+
+public void ConfigureServices(IServiceCollection services)
+{
+	services.AddMapExtensions();
+}
 ```
 
 ### Dependences
